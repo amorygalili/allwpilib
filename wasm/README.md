@@ -15,3 +15,7 @@ https://web.dev/emscripten-npm/
 https://stackoverflow.com/questions/8132594/disable-werror-in-configure-file
 
 https://embeddedartistry.com/blog/2017/05/22/werror-is-not-your-friend/
+
+https://medium.com/cyberbotics/porting-a-c-rendering-engine-to-webassembly-9c32d76c31f1
+
+https://web.dev/emscripting-a-c-library/
