@@ -6,3 +6,12 @@ WPILib C++ will be compiled to WebAssembly using Emscripten: https://developer.m
 
 Building WPILib with cmake: **README-CMAKE.md**
 Building with emcc: https://emscripten.org/docs/compiling/Building-Projects.html
+
+
+# Articles and Links
+
+https://web.dev/emscripten-npm/
+
+https://stackoverflow.com/questions/8132594/disable-werror-in-configure-file
+
+https://embeddedartistry.com/blog/2017/05/22/werror-is-not-your-friend/
