@@ -8,10 +8,13 @@
 #include <span>
 
 #include <wpi/SymbolExports.h>
+#include <emscripten/bind.h>
 
 #include "Transform2d.h"
 #include "Translation2d.h"
 #include "Twist2d.h"
+
+using namespace emscripten;
 
 namespace wpi {
 class json;
@@ -207,3 +210,10 @@ void from_json(const wpi::json& json, Pose2d& pose);
 }  // namespace frc
 
 #include "Pose2d.inc"
+
+EMSCRIPTEN_BINDINGS(my_module) {
+  class_<frc::Pose2d>("Pose2d")
+      .constructor<>()
+      .function("X", &frc::Pose2d::X)
+      .function("Y", &frc::Pose2d::Y);
+}

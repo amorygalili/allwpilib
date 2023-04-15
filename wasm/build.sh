@@ -19,4 +19,4 @@ emcmake cmake ../../ -DWITH_JAVA=OFF -DWITH_CSCORE=OFF -DWITH_NTCORE=OFF -DWITH_
 emmake make -i
 
 
-emcc ./wpimath/CMakeFiles/wpimath.dir/src/main/native/cpp/geometry/Pose2d.cpp.o -o ../build-output/Pose2d.js
+emcc -lembind ./wpimath/CMakeFiles/wpimath.dir/src/main/native/cpp/geometry/Pose2d.cpp.o -o ../build-output/index.html
