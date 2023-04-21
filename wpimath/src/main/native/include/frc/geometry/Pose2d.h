@@ -215,5 +215,10 @@ EMSCRIPTEN_BINDINGS(my_module) {
   class_<frc::Pose2d>("Pose2d")
       .constructor<>()
       .function("X", &frc::Pose2d::X)
-      .function("Y", &frc::Pose2d::Y);
+      .function("Y", &frc::Pose2d::Y)
+      .function("plus", &frc::Pose2d::operator+, allow_raw_pointers())
+      // .function("minus", &frc::Pose2d::operator-, allow_raw_pointers());
+      // // .function("equals", &frc::Pose2d::operator==, emscripten::allow_raw_pointers())
+      .function("times", &frc::Pose2d::operator*, allow_raw_pointers());
+      // .function("div", &frc::Pose2d::operator/, allow_raw_pointers());
 }
