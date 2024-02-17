@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+</head>
+
+<body>
+    <script src="/build-output/Pose2d.js"></script>
+    <script>
+        // https://github.com/emscripten-core/emscripten/issues/9722
+        // https://ppuzio.medium.com/c-in-the-browser-with-webassembly-via-emscripten-vite-and-react-bd82e0598a5e
+        Module.onRuntimeInitialized = _ => {
+            console.log('module:', Module);
+            const pose = new Module.Pose2d();
+            console.log('pose:', pose);
+            console.log('pose:', pose, pose.X(), pose.Y());
+            
+        };
+    </script>
+</body>
+
+</html>
