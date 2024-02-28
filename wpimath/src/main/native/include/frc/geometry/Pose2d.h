@@ -14,6 +14,7 @@
 #include "frc/geometry/Transform2d.h"
 #include "frc/geometry/Translation2d.h"
 #include "frc/geometry/Twist2d.h"
+#include <emscripten/bind.h>
 
 namespace frc {
 

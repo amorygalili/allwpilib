@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-source ./emsdk/emsdk_env.sh
+# ./emsdk/emsdk_env.bat
 
 mkdir ./build-emmake
 mkdir ./build-output
@@ -19,4 +19,5 @@ emcmake cmake ../../ -DWITH_JAVA=OFF -DWITH_CSCORE=OFF -DWITH_NTCORE=OFF -DWITH_
 emmake make -i
 
 
-emcc -lembind ./wpimath/CMakeFiles/wpimath.dir/src/main/native/cpp/geometry/Pose2d.cpp.o -o ../build-output/index.html
+# emcc -lembind ./wpimath/CMakeFiles/wpimath.dir/src/main/native/cpp/geometry/Pose2d.cpp.o -o ../build-output/index.html
+# ./wpimath/src/main\native\cpp\geometry\Pose2d.cpp
