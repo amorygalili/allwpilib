@@ -4,5 +4,12 @@ export { IterativeRobotBase } from './IterativeRobotBase';
 export { TimedRobot } from './TimedRobot';
 export { Watchdog } from './Watchdog';
 
+// Export driver station classes
+export { DriverStation, Alliance, Location, MatchType, JoystickAxisType, JoystickButtonType, JoystickPOVDirection } from './DriverStation';
+export { DSControlWord } from './DSControlWord';
+
+// Export command-based framework
+export * from './commands';
+
 // Export any utility classes
 // TODO: Add more classes as they are implemented

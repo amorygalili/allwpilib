@@ -8,10 +8,25 @@ The wpilibts package provides the core classes needed to create robot programs u
 
 ## Key Classes
 
+### Core Robot Classes
 - **RobotBase**: The base class for all robot programs.
 - **IterativeRobotBase**: Implements a specific type of robot program framework with periodic methods.
 - **TimedRobot**: Extends IterativeRobotBase to provide a timed robot program framework.
 - **Watchdog**: A utility class for monitoring loop timing and detecting overruns.
+
+### Driver Station
+- **DriverStation**: Provides access to driver station data and control.
+- **DSControlWord**: Encapsulates the robot state information.
+
+### Command-Based Framework
+- **Command**: The base class for all commands.
+- **Subsystem**: The base class for all subsystems.
+- **CommandScheduler**: Manages command execution and scheduling.
+- **CommandGroupBase**: Base class for command groups.
+- **SequentialCommandGroup**: Runs commands in sequence.
+- **ParallelCommandGroup**: Runs commands in parallel.
+- **ParallelRaceGroup**: Runs commands in parallel, ending when any command ends.
+- **ParallelDeadlineGroup**: Runs commands in parallel, ending when a specific command ends.
 
 ## Getting Started
 
@@ -30,19 +45,19 @@ To create a new robot program:
      public override robotInit(): void {
        console.log('Robot initialized!');
      }
-     
+
      public override autonomousInit(): void {
        console.log('Autonomous mode started!');
      }
-     
+
      public override autonomousPeriodic(): void {
        // Autonomous code here
      }
-     
+
      public override teleopInit(): void {
        console.log('Teleop mode started!');
      }
-     
+
      public override teleopPeriodic(): void {
        // Teleop code here
      }
@@ -88,7 +103,30 @@ Exit methods are called when leaving a mode:
 
 ## Examples
 
-See the `examples` directory for sample robot programs.
+See the `examples` directory for sample robot programs. You can run an example using:
+
+```bash
+npm run example BasicRobot
+```
+
+Replace `BasicRobot` with the name of the example you want to run.
+
+## Testing
+
+The wpilibts package includes a comprehensive test suite. You can run the tests using:
+
+```bash
+# Run all tests
+npm test
+
+# Run tests in watch mode (automatically re-run when files change)
+npm run test:watch
+
+# Run tests with coverage report
+npm run test:coverage
+```
+
+See the `tests` directory for more information about the test suite.
 
 ## License
 

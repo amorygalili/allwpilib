@@ -46,6 +46,8 @@ export class Watchdog {
     return this.m_timeout;
   }
 
+
+
   /**
    * Returns true if the watchdog timer has expired.
    */

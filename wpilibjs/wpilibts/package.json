@@ -7,9 +7,12 @@
   "scripts": {
     "build": "tsc",
     "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
     "clean": "rimraf dist",
     "lint": "eslint src/**/*.ts",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "example": "node run-example.js"
   },
   "keywords": [
     "wpilib",
@@ -20,10 +23,6 @@
   "author": "WPILib",
   "license": "BSD-3-Clause",
   "dependencies": {
-    "@wpilibjs/wpimath": "^0.1.0",
-    "@wpilibjs/wpiutil": "^0.1.0",
-    "@wpilibjs/hal": "^0.1.0",
-    "@wpilibjs/ntcore": "^0.1.0"
   },
   "devDependencies": {
     "@types/jest": "^29.5.0",

@@ -1,6 +1,8 @@
+import { DriverStation } from './DriverStation';
+
 /**
  * RobotBase is the base class for all robot programs in TypeScript.
- * 
+ *
  * This class provides the basic structure for robot programs, including
  * the main entry point and lifecycle methods.
  */
@@ -13,7 +15,7 @@ export abstract class RobotBase {
    * User code should be placed in the constructor that runs before the Autonomous or Operator
    * Control period starts. The constructor will run to completion before Autonomous is entered.
    */
-  protected constructor() {
+  constructor() {
     console.log(`********** Robot program starting **********`);
   }
 
@@ -23,7 +25,7 @@ export abstract class RobotBase {
    * @return True if the Robot is currently enabled by the field controls.
    */
   public isEnabled(): boolean {
-    return false; // TODO: Implement with DriverStation
+    return DriverStation.getInstance().isEnabled();
   }
 
   /**
@@ -41,7 +43,7 @@ export abstract class RobotBase {
    * @return True if the robot is currently operating Autonomously.
    */
   public isAutonomous(): boolean {
-    return false; // TODO: Implement with DriverStation
+    return DriverStation.getInstance().isAutonomous();
   }
 
   /**
@@ -50,7 +52,7 @@ export abstract class RobotBase {
    * @return True if the robot is currently operating Teleoperatedly.
    */
   public isTeleop(): boolean {
-    return false; // TODO: Implement with DriverStation
+    return DriverStation.getInstance().isTeleop();
   }
 
   /**
@@ -59,7 +61,7 @@ export abstract class RobotBase {
    * @return True if the robot is currently running tests.
    */
   public isTest(): boolean {
-    return false; // TODO: Implement with DriverStation
+    return DriverStation.getInstance().isTest();
   }
 
   /**
@@ -101,7 +103,7 @@ export abstract class RobotBase {
 
   /**
    * Clean up resources used by the robot.
-   * 
+   *
    * This method should be overridden by subclasses to clean up any resources
    * they have allocated.
    */
@@ -117,11 +119,11 @@ export abstract class RobotBase {
     RobotBase.m_robotInitialized = true;
 
     RobotBase.m_robotRunning = true;
-    
+
     let robot: RobotBase | undefined;
     try {
       robot = new robotClass();
-      
+
       try {
         robot.startCompetition();
       } catch (error) {

@@ -1,5 +1,17 @@
 import { RobotBase } from './RobotBase';
 import { Watchdog } from './Watchdog';
+import { DriverStation } from './DriverStation';
+
+/**
+ * Robot mode enumeration.
+ */
+enum Mode {
+  kNone,
+  kDisabled,
+  kAutonomous,
+  kTeleop,
+  kTest
+}
 
 /**
  * IterativeRobotBase implements a specific type of robot program framework, extending the RobotBase
@@ -37,13 +49,6 @@ import { Watchdog } from './Watchdog';
  *   - testExit() -- called each and every time test is exited
  */
 export abstract class IterativeRobotBase extends RobotBase {
-  private enum Mode {
-    kNone,
-    kDisabled,
-    kAutonomous,
-    kTeleop,
-    kTest
-  }
 
   private m_lastMode: Mode = Mode.kNone;
   private m_period: number;
@@ -65,7 +70,7 @@ export abstract class IterativeRobotBase extends RobotBase {
    *
    * @param period Period in seconds.
    */
-  protected constructor(period: number) {
+  constructor(period: number) {
     super();
     this.m_period = period;
     this.m_watchdog = new Watchdog(period, this.printLoopOverrunMessage.bind(this));
@@ -278,16 +283,16 @@ export abstract class IterativeRobotBase extends RobotBase {
    * Loop function called by subclasses.
    */
   protected loopFunc(): void {
-    // TODO: Implement DriverStation.refreshData();
+    DriverStation.getInstance().refreshData();
     this.m_watchdog.reset();
 
-    // TODO: Implement DSControlWord
-    // For now, we'll simulate the robot being in disabled mode
-    const isDisabled = true;
-    const isAutonomous = false;
-    const isTeleop = false;
-    const isTest = false;
-    const isDSAttached = true;
+    // Get the robot state from the DriverStation
+    const ds = DriverStation.getInstance();
+    const isDisabled = ds.isDisabled();
+    const isAutonomous = ds.isAutonomous();
+    const isTeleop = ds.isTeleop();
+    const isTest = ds.isTest();
+    const isDSAttached = ds.isDSAttached();
 
     // Get current mode
     let mode = Mode.kNone;
@@ -362,22 +367,22 @@ export abstract class IterativeRobotBase extends RobotBase {
     // Call the appropriate function depending upon the current robot mode
     switch (mode) {
       case Mode.kDisabled:
-        // TODO: Implement DriverStationJNI.observeUserProgramDisabled();
+        DriverStation.observeUserProgramDisabled();
         this.disabledPeriodic();
         this.m_watchdog.addEpoch("disabledPeriodic()");
         break;
       case Mode.kAutonomous:
-        // TODO: Implement DriverStationJNI.observeUserProgramAutonomous();
+        DriverStation.observeUserProgramAutonomous();
         this.autonomousPeriodic();
         this.m_watchdog.addEpoch("autonomousPeriodic()");
         break;
       case Mode.kTeleop:
-        // TODO: Implement DriverStationJNI.observeUserProgramTeleop();
+        DriverStation.observeUserProgramTeleop();
         this.teleopPeriodic();
         this.m_watchdog.addEpoch("teleopPeriodic()");
         break;
       case Mode.kTest:
-        // TODO: Implement DriverStationJNI.observeUserProgramTest();
+        DriverStation.observeUserProgramTest();
         this.testPeriodic();
         this.m_watchdog.addEpoch("testPeriodic()");
         break;

@@ -19,15 +19,15 @@ export class TimedRobot extends IterativeRobotBase {
   /**
    * Constructor for TimedRobot.
    */
-  protected constructor();
+  constructor();
   /**
    * Constructor for TimedRobot.
    *
    * @param period Period in seconds.
    */
-  protected constructor(period?: number) {
+  constructor(period?: number) {
     super(period ?? TimedRobot.kDefaultPeriod);
-    
+
     this.m_startTime = Date.now() / 1000;
     this.addPeriodic(this.loopFunc.bind(this), this.getPeriod());
   }
@@ -37,15 +37,15 @@ export class TimedRobot extends IterativeRobotBase {
    */
   public startCompetition(): void {
     this.robotInit();
-    
+
     if (this.isSimulation()) {
       this.simulationInit();
     }
-    
+
     // Tell the DS that the robot is ready to be enabled
     console.log("********** Robot program startup complete **********");
     // TODO: Implement DriverStationJNI.observeUserProgramStarting();
-    
+
     // Loop forever, calling the appropriate mode-dependent function
     this.startTimer();
   }
@@ -113,14 +113,14 @@ export class TimedRobot extends IterativeRobotBase {
       // Use a small interval (10ms) to check for callbacks that need to run
       this.m_timerHandle = setInterval(() => {
         const currentTime = Date.now() / 1000;
-        
+
         // Process all callbacks that are ready to run
         while (this.m_callbacks.size() > 0 && this.m_callbacks.peek().expirationTime <= currentTime) {
           const callback = this.m_callbacks.poll();
           if (callback) {
             this.m_loopStartTime = Date.now() / 1000;
             callback.func();
-            
+
             // Increment the expiration time by the period
             callback.expirationTime += callback.period / 1000;
             this.m_callbacks.add(callback);
@@ -169,7 +169,7 @@ class PriorityQueue<T extends { expirationTime: number }> {
 
   /**
    * Add an element to the queue.
-   * 
+   *
    * @param element The element to add.
    */
   public add(element: T): void {
@@ -179,7 +179,7 @@ class PriorityQueue<T extends { expirationTime: number }> {
 
   /**
    * Remove and return the element with the earliest expiration time.
-   * 
+   *
    * @returns The element with the earliest expiration time, or undefined if the queue is empty.
    */
   public poll(): T | undefined {
@@ -188,7 +188,7 @@ class PriorityQueue<T extends { expirationTime: number }> {
 
   /**
    * Return the element with the earliest expiration time without removing it.
-   * 
+   *
    * @returns The element with the earliest expiration time, or undefined if the queue is empty.
    */
   public peek(): T {
@@ -197,7 +197,7 @@ class PriorityQueue<T extends { expirationTime: number }> {
 
   /**
    * Return the number of elements in the queue.
-   * 
+   *
    * @returns The number of elements in the queue.
    */
   public size(): number {
