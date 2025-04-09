@@ -10,7 +10,9 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "clean": "rimraf dist",
-    "clean:all": "rimraf dist coverage"
+    "clean:all": "rimraf dist coverage",
+    "example:server": "ts-node examples/simple-server.ts",
+    "example:client": "ts-node examples/simple-client.ts"
   },
   "keywords": [
     "wpilib",
@@ -26,6 +28,7 @@
     "jest": "^29.5.0",
     "rimraf": "^4.4.1",
     "ts-jest": "^29.1.0",
+    "ts-node": "^10.9.1",
     "typescript": "^5.0.4"
   },
   "dependencies": {

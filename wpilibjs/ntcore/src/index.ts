@@ -15,3 +15,6 @@ export * from './server/NTServer';
 
 // Export utils
 export * as utils from './util/NTUtils';
+
+// Export high-level API
+export * from './api';

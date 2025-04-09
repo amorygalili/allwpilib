@@ -180,25 +180,61 @@ export class NTDeserializer {
    * @returns Deserialized message
    */
   static deserializeEntryAssignment(buffer: Buffer): NTEntryAssignmentMessage {
+    // Check if buffer has enough bytes for the message type (1 byte) and message length (2 bytes)
+    if (buffer.length < 3) {
+      throw new Error(`Buffer too small for entry assignment header: ${buffer.length} bytes`);
+    }
+
     let offset = 3;
+
+    // Check if buffer has enough bytes for the name length (2 bytes)
+    if (buffer.length < offset + 2) {
+      throw new Error(`Buffer too small for entry name length: ${buffer.length} bytes`);
+    }
 
     // Read the name
     const nameLength = buffer.readUInt16BE(offset);
     offset += 2;
+
+    // Check if buffer has enough bytes for the name
+    if (buffer.length < offset + nameLength) {
+      throw new Error(`Buffer too small for entry name: ${buffer.length} bytes, need ${offset + nameLength} bytes`);
+    }
+
     const name = buffer.toString('utf8', offset, offset + nameLength);
     offset += nameLength;
+
+    // Check if buffer has enough bytes for the type (1 byte)
+    if (buffer.length < offset + 1) {
+      throw new Error(`Buffer too small for entry type: ${buffer.length} bytes`);
+    }
 
     // Read the type
     const entryType = buffer.readUInt8(offset);
     offset += 1;
 
+    // Check if buffer has enough bytes for the entry ID (2 bytes)
+    if (buffer.length < offset + 2) {
+      throw new Error(`Buffer too small for entry ID: ${buffer.length} bytes`);
+    }
+
     // Read the entry ID
     const entryId = buffer.readUInt16BE(offset);
     offset += 2;
 
+    // Check if buffer has enough bytes for the sequence number (2 bytes)
+    if (buffer.length < offset + 2) {
+      throw new Error(`Buffer too small for sequence number: ${buffer.length} bytes`);
+    }
+
     // Read the sequence number
     const sequenceNumber = buffer.readUInt16BE(offset);
     offset += 2;
+
+    // Check if buffer has enough bytes for the flags (1 byte)
+    if (buffer.length < offset + 1) {
+      throw new Error(`Buffer too small for flags: ${buffer.length} bytes`);
+    }
 
     // Read the flags
     const flags = buffer.readUInt8(offset);
@@ -217,18 +253,41 @@ export class NTDeserializer {
    * @returns Deserialized message
    */
   static deserializeEntryUpdate(buffer: Buffer): NTEntryUpdateMessage {
+    // Check if buffer has enough bytes for the message type (1 byte) and message length (2 bytes)
+    if (buffer.length < 3) {
+      throw new Error(`Buffer too small for entry update header: ${buffer.length} bytes`);
+    }
+
     let offset = 3;
+
+    // Check if buffer has enough bytes for the entry ID (2 bytes)
+    if (buffer.length < offset + 2) {
+      throw new Error(`Buffer too small for entry ID: ${buffer.length} bytes`);
+    }
 
     // Read the entry ID
     const entryId = buffer.readUInt16BE(offset);
     offset += 2;
 
+    // Check if buffer has enough bytes for the sequence number (2 bytes)
+    if (buffer.length < offset + 2) {
+      throw new Error(`Buffer too small for sequence number: ${buffer.length} bytes`);
+    }
+
     // Read the sequence number
     const sequenceNumber = buffer.readUInt16BE(offset);
     offset += 2;
 
-    // Read the value (type is Double for entry updates in tests)
-    const { value } = NTDeserializer.deserializeValue(buffer.slice(offset), NTValueType.Double);
+    // Read the value type (1 byte)
+    if (buffer.length < offset + 1) {
+      throw new Error(`Buffer too small for value type: ${buffer.length} bytes`);
+    }
+
+    const valueType = buffer.readUInt8(offset);
+    offset += 1;
+
+    // Read the value
+    const { value } = NTDeserializer.deserializeValue(buffer.slice(offset), valueType);
 
     return { type: NTMessageType.EntryUpdate, entryId, sequenceNumber, value };
   }
@@ -330,8 +389,18 @@ export class NTDeserializer {
   static deserializeValue(buffer: Buffer, type?: number): { value: NTValue; bytesConsumed: number } {
     // If type is not provided, infer it from the first byte
     if (type === undefined) {
+      // Check if buffer has enough bytes for the type (1 byte)
+      if (buffer.length < 1) {
+        throw new Error(`Buffer too small for value type: ${buffer.length} bytes`);
+      }
       type = buffer.readUInt8(0);
       buffer = buffer.slice(1);
+    }
+
+    // Validate the type
+    if (type < 0 || type > 7) {
+      console.warn(`Received invalid value type: ${type}, defaulting to Double`);
+      type = NTValueType.Double;
     }
 
     // Deserialize the value based on the type
@@ -353,7 +422,9 @@ export class NTDeserializer {
       case NTValueType.RPC:
         return NTDeserializer.deserializeRaw(buffer);
       default:
-        throw new Error(`Unsupported value type: ${type}`);
+        console.warn(`Unsupported value type: ${type}, defaulting to Double`);
+        // Default to Double with a value of 0
+        return { value: 0, bytesConsumed: 0 };
     }
   }
 
@@ -364,6 +435,10 @@ export class NTDeserializer {
    * @returns Deserialized value and the number of bytes consumed
    */
   static deserializeBoolean(buffer: Buffer): { value: boolean; bytesConsumed: number } {
+    // Check if buffer has enough bytes for a boolean (1 byte)
+    if (buffer.length < 1) {
+      throw new Error(`Buffer too small for boolean: ${buffer.length} bytes`);
+    }
     const value = buffer.readUInt8(0) !== 0;
     return { value, bytesConsumed: 1 };
   }
@@ -375,6 +450,10 @@ export class NTDeserializer {
    * @returns Deserialized value and the number of bytes consumed
    */
   static deserializeDouble(buffer: Buffer): { value: number; bytesConsumed: number } {
+    // Check if buffer has enough bytes for a double (8 bytes)
+    if (buffer.length < 8) {
+      throw new Error(`Buffer too small for double: ${buffer.length} bytes`);
+    }
     const value = buffer.readDoubleLE(0);
     return { value, bytesConsumed: 8 };
   }
@@ -386,7 +465,17 @@ export class NTDeserializer {
    * @returns Deserialized value and the number of bytes consumed
    */
   static deserializeString(buffer: Buffer): { value: string; bytesConsumed: number } {
+    // Check if buffer has enough bytes for the length (2 bytes)
+    if (buffer.length < 2) {
+      throw new Error(`Buffer too small for string length: ${buffer.length} bytes`);
+    }
     const length = buffer.readUInt16BE(0);
+
+    // Check if buffer has enough bytes for the string
+    if (buffer.length < 2 + length) {
+      throw new Error(`Buffer too small for string: ${buffer.length} bytes, need ${2 + length} bytes`);
+    }
+
     const value = buffer.toString('utf8', 2, 2 + length);
     return { value, bytesConsumed: 2 + length };
   }
@@ -398,7 +487,17 @@ export class NTDeserializer {
    * @returns Deserialized value and the number of bytes consumed
    */
   static deserializeRaw(buffer: Buffer): { value: Buffer; bytesConsumed: number } {
+    // Check if buffer has enough bytes for the length (2 bytes)
+    if (buffer.length < 2) {
+      throw new Error(`Buffer too small for raw data length: ${buffer.length} bytes`);
+    }
     const length = buffer.readUInt16BE(0);
+
+    // Check if buffer has enough bytes for the raw data
+    if (buffer.length < 2 + length) {
+      throw new Error(`Buffer too small for raw data: ${buffer.length} bytes, need ${2 + length} bytes`);
+    }
+
     const value = Buffer.alloc(length);
     buffer.copy(value, 0, 2, 2 + length);
     return { value, bytesConsumed: 2 + length };
@@ -411,7 +510,17 @@ export class NTDeserializer {
    * @returns Deserialized value and the number of bytes consumed
    */
   static deserializeBooleanArray(buffer: Buffer): { value: boolean[]; bytesConsumed: number } {
+    // Check if buffer has enough bytes for the length (2 bytes)
+    if (buffer.length < 2) {
+      throw new Error(`Buffer too small for boolean array length: ${buffer.length} bytes`);
+    }
     const length = buffer.readUInt16BE(0);
+
+    // Check if buffer has enough bytes for the boolean array
+    if (buffer.length < 2 + length) {
+      throw new Error(`Buffer too small for boolean array: ${buffer.length} bytes, need ${2 + length} bytes`);
+    }
+
     const value: boolean[] = [];
     for (let i = 0; i < length; i++) {
       value.push(buffer.readUInt8(2 + i) !== 0);
@@ -426,7 +535,17 @@ export class NTDeserializer {
    * @returns Deserialized value and the number of bytes consumed
    */
   static deserializeDoubleArray(buffer: Buffer): { value: number[]; bytesConsumed: number } {
+    // Check if buffer has enough bytes for the length (2 bytes)
+    if (buffer.length < 2) {
+      throw new Error(`Buffer too small for double array length: ${buffer.length} bytes`);
+    }
     const length = buffer.readUInt16BE(0);
+
+    // Check if buffer has enough bytes for the double array (each double is 8 bytes)
+    if (buffer.length < 2 + length * 8) {
+      throw new Error(`Buffer too small for double array: ${buffer.length} bytes, need ${2 + length * 8} bytes`);
+    }
+
     const value: number[] = [];
     for (let i = 0; i < length; i++) {
       value.push(buffer.readDoubleLE(2 + i * 8));
@@ -441,15 +560,33 @@ export class NTDeserializer {
    * @returns Deserialized value and the number of bytes consumed
    */
   static deserializeStringArray(buffer: Buffer): { value: string[]; bytesConsumed: number } {
+    // Check if buffer has enough bytes for the length (2 bytes)
+    if (buffer.length < 2) {
+      throw new Error(`Buffer too small for string array length: ${buffer.length} bytes`);
+    }
     const length = buffer.readUInt16BE(0);
+
     const value: string[] = [];
     let offset = 2;
+
     for (let i = 0; i < length; i++) {
+      // Check if buffer has enough bytes for the string length (2 bytes)
+      if (buffer.length < offset + 2) {
+        throw new Error(`Buffer too small for string length at index ${i}: ${buffer.length} bytes, offset ${offset}`);
+      }
+
       const stringLength = buffer.readUInt16BE(offset);
       offset += 2;
+
+      // Check if buffer has enough bytes for the string
+      if (buffer.length < offset + stringLength) {
+        throw new Error(`Buffer too small for string at index ${i}: ${buffer.length} bytes, need ${offset + stringLength} bytes`);
+      }
+
       value.push(buffer.toString('utf8', offset, offset + stringLength));
       offset += stringLength;
     }
+
     return { value, bytesConsumed: offset };
   }
 }

@@ -1,0 +1,36 @@
+{
+  "name": "@wpilibjs/wpilibts",
+  "version": "0.1.0",
+  "description": "WPILib implementation in TypeScript",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest",
+    "clean": "rimraf dist",
+    "lint": "eslint src/**/*.ts",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "wpilib",
+    "frc",
+    "robotics",
+    "typescript"
+  ],
+  "author": "WPILib",
+  "license": "BSD-3-Clause",
+  "dependencies": {
+    "@wpilibjs/wpimath": "^0.1.0",
+    "@wpilibjs/wpiutil": "^0.1.0",
+    "@wpilibjs/hal": "^0.1.0",
+    "@wpilibjs/ntcore": "^0.1.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.0",
+    "@types/node": "^18.15.11",
+    "jest": "^29.5.0",
+    "rimraf": "^5.0.0",
+    "ts-jest": "^29.1.0",
+    "typescript": "^5.0.4"
+  }
+}

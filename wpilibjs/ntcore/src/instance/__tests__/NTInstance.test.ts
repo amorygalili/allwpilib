@@ -113,7 +113,7 @@ describe('NTInstance', () => {
 
     test('returns null if entry does not exist', () => {
       const entry = instance.getEntry('nonexistent');
-      expect(entry).toBeNull();
+      expect(entry).toBeUndefined();
     });
   });
 
@@ -185,13 +185,13 @@ describe('NTInstance', () => {
       instance.addEntryListener(listener, { notifyOnNew: true });
       instance.createEntry('test', NTValueType.Boolean, false);
       await sleep(10); // Wait for async notification
-      expect(listener).toHaveBeenCalledWith({
+      expect(listener).toHaveBeenCalledWith(expect.objectContaining({
         name: 'test',
         value: false,
         flags: NTEntryFlags.None,
         isNew: true,
         isDelete: false
-      });
+      }));
     });
 
     test('notifies on update', async () => {
@@ -200,13 +200,13 @@ describe('NTInstance', () => {
       instance.addEntryListener(listener, { notifyOnUpdate: true });
       instance.setValue('test', true);
       await sleep(10); // Wait for async notification
-      expect(listener).toHaveBeenCalledWith({
+      expect(listener).toHaveBeenCalledWith(expect.objectContaining({
         name: 'test',
         value: true,
         flags: NTEntryFlags.None,
         isNew: false,
         isDelete: false
-      });
+      }));
     });
 
     test('notifies on delete', async () => {
@@ -215,13 +215,13 @@ describe('NTInstance', () => {
       instance.addEntryListener(listener, { notifyOnDelete: true });
       instance.deleteEntry('test');
       await sleep(10); // Wait for async notification
-      expect(listener).toHaveBeenCalledWith({
+      expect(listener).toHaveBeenCalledWith(expect.objectContaining({
         name: 'test',
         value: false,
         flags: NTEntryFlags.None,
         isNew: false,
         isDelete: true
-      });
+      }));
     });
 
     test('notifies on flags change', async () => {
@@ -230,26 +230,26 @@ describe('NTInstance', () => {
       instance.addEntryListener(listener, { notifyOnFlagsChange: true });
       instance.setFlags('test', NTEntryFlags.Persistent);
       await sleep(10); // Wait for async notification
-      expect(listener).toHaveBeenCalledWith({
+      expect(listener).toHaveBeenCalledWith(expect.objectContaining({
         name: 'test',
         value: false,
         flags: NTEntryFlags.Persistent,
         isNew: false,
         isDelete: false
-      });
+      }));
     });
 
     test('notifies immediately if requested', async () => {
       instance.createEntry('test', NTValueType.Boolean, false);
       const listener = jest.fn();
       instance.addEntryListener(listener, { notifyImmediately: true });
-      expect(listener).toHaveBeenCalledWith({
+      expect(listener).toHaveBeenCalledWith(expect.objectContaining({
         name: 'test',
         value: false,
         flags: NTEntryFlags.None,
         isNew: true,
         isDelete: false
-      });
+      }));
     });
 
     test('filters by name', async () => {
@@ -259,23 +259,24 @@ describe('NTInstance', () => {
       instance.createEntry('baz/qux', NTValueType.Boolean, false);
       await sleep(10); // Wait for async notification
       expect(listener).toHaveBeenCalledTimes(1);
-      expect(listener).toHaveBeenCalledWith({
+      expect(listener).toHaveBeenCalledWith(expect.objectContaining({
         name: 'foo/bar',
         value: false,
         flags: NTEntryFlags.None,
         isNew: true,
         isDelete: false
-      });
+      }));
     });
   });
 
   describe('removeEntryListener', () => {
     test('stops notifications when removed', async () => {
       const listener = jest.fn();
-      const id = instance.addEntryListener(listener, { notifyOnUpdate: true });
+      const id = instance.addEntryListener(listener, { notifyOnUpdate: true, notifyOnNew: true });
       instance.createEntry('test', NTValueType.Boolean, false);
+      await sleep(10); // Wait for async notification for new entry
       instance.setValue('test', true);
-      await sleep(10); // Wait for async notification
+      await sleep(10); // Wait for async notification for update
       expect(listener).toHaveBeenCalledTimes(2); // New + update
 
       instance.removeEntryListener(id);

@@ -77,7 +77,9 @@ export class NTEntry extends EventEmitter {
       name: this._name,
       value,
       flags: this._flags,
-      timestamp
+      timestamp,
+      isNew: false,
+      isDelete: false
     };
 
     this._listeners.forEach(listener => {
@@ -115,7 +117,9 @@ export class NTEntry extends EventEmitter {
       name: this._name,
       value: this._value,
       flags,
-      timestamp
+      timestamp,
+      isNew: false,
+      isDelete: false
     };
 
     this._listeners.forEach(listener => {

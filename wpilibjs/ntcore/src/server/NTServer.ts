@@ -1,5 +1,12 @@
 import { EventEmitter } from 'events';
 import { Server, Socket } from 'net';
+
+// Debug logging function
+function debug(...args: any[]) {
+  if (process.env.NT_DEBUG === 'true') {
+    console.log('[NTServer]', ...args);
+  }
+}
 import { NTInstance } from '../instance/NTInstance';
 import { NTConnectionStatus, NTEntryFlags, NTValue, NTValueType } from '../types/NTTypes';
 import { Timestamp } from '@wpilib/wpiutil/src/timestamp/Timestamp';
@@ -127,39 +134,62 @@ export class NTServer extends EventEmitter {
 
   /**
    * Start the server
+   *
+   * @returns Promise that resolves when the server is started
    */
-  start(): void {
-    // If already running, do nothing
-    if (this._running) {
-      return;
-    }
-
-    // Create a new server
-    this._server = new Server();
-
-    // Set up event handlers
-    this._server.on('listening', this._handleListening.bind(this));
-    this._server.on('connection', this._handleConnection.bind(this));
-    this._server.on('error', this._handleError.bind(this));
-    this._server.on('close', this._handleClose.bind(this));
-
-    // Set up entry listener
-    this._instanceEntryListenerId = this._instance.addEntryListener(
-      (notification) => {
-        // Broadcast the entry update to all clients
-        this._broadcastEntryUpdate(notification.name, notification.value, notification.flags);
-      },
-      {
-        notifyOnUpdate: true,
-        notifyOnNew: true,
-        notifyOnDelete: true,
-        notifyOnFlagsChange: true,
-        notifyImmediately: false
+  start(): Promise<void> {
+    debug('Starting server on port', this._options.port);
+    return new Promise((resolve, reject) => {
+      // If already running, resolve immediately
+      if (this._running) {
+        debug('Server already running');
+        resolve();
+        return;
       }
-    );
 
-    // Start listening
-    this._server.listen(this._options.port, this._options.host);
+      // Create a new server
+      this._server = new Server();
+
+      // Set up event handlers
+      this._server.on('listening', () => {
+        this._handleListening();
+        debug('Server started successfully');
+        // Update the status
+        this._running = true;
+        this._instance.setConnectionStatus(NTConnectionStatus.Connected, {
+          remoteId: `${this._options.host}:${this._options.port}`,
+          protocolVersion: 3
+        });
+        this.emit('start');
+        resolve();
+      });
+      this._server.on('connection', this._handleConnection.bind(this));
+      this._server.on('error', (err) => {
+        debug('Server error', err.message);
+        this._handleError(err);
+        reject(err);
+      });
+      this._server.on('close', this._handleClose.bind(this));
+
+      // Set up entry listener
+      this._instanceEntryListenerId = this._instance.addEntryListener(
+        (notification) => {
+          debug('Entry change notification', notification.name, notification.value);
+          // Broadcast the entry update to all clients
+          this._broadcastEntryUpdate(notification.name, notification.value, notification.flags);
+        },
+        {
+          notifyOnUpdate: true,
+          notifyOnNew: true,
+          notifyOnDelete: true,
+          notifyOnFlagsChange: true,
+          notifyImmediately: false
+        }
+      );
+
+      // Start listening
+      this._server.listen(this._options.port, this._options.host);
+    });
   }
 
   /**
@@ -218,6 +248,8 @@ export class NTServer extends EventEmitter {
    * @param socket Client socket
    */
   private _handleConnection(socket: Socket): void {
+    debug('Client connected', socket.remoteAddress, socket.remotePort);
+
     // Get client info
     const address = socket.remoteAddress || 'unknown';
     const port = socket.remotePort || 0;
@@ -430,8 +462,10 @@ export class NTServer extends EventEmitter {
 
       case NTMessageType.ClientHelloComplete:
         // Client hello complete message
+        debug('Received client hello complete from', clientId);
         client.handshakeComplete = true;
         this._sendServerHelloComplete(clientId);
+        debug('Sending all entries to client', clientId);
         this._sendAllEntries(clientId);
         break;
 
@@ -533,6 +567,7 @@ export class NTServer extends EventEmitter {
    * @param message Entry update message
    */
   private _handleClientEntryUpdate(clientId: string, message: NTEntryUpdateMessage): void {
+    debug('Handling client entry update from', clientId, 'entryId:', message.entryId, 'value:', message.value);
     // Get client
     const client = this._clients.get(clientId);
     if (!client) {
@@ -542,14 +577,19 @@ export class NTServer extends EventEmitter {
     // Get the entry name
     const name = client.reverseEntryIdMap.get(message.entryId);
     if (!name) {
+      debug(`Entry update for unknown entry ID from ${clientId}: ${message.entryId}`);
       console.warn(`Entry update for unknown entry ID from ${clientId}: ${message.entryId}`);
       return;
     }
 
+    debug('Found entry name:', name);
+
     // Check the sequence number
     const currentSequence = client.sequenceNumbers.get(message.entryId) || 0;
+    debug('Current sequence:', currentSequence, 'New sequence:', message.sequenceNumber);
     if (message.sequenceNumber <= currentSequence) {
       // Ignore out-of-order updates
+      debug('Ignoring out-of-order update');
       return;
     }
 
@@ -557,9 +597,23 @@ export class NTServer extends EventEmitter {
     client.sequenceNumbers.set(message.entryId, message.sequenceNumber);
 
     // Update the entry in the instance
-    this._instance.setValue(name, message.value);
+    debug('Updating instance value for', name, 'to', message.value);
+
+    // Check if the entry exists
+    let entry = this._instance.getEntry(name);
+    if (!entry) {
+      // Create the entry with the appropriate type
+      debug('Entry does not exist, creating it');
+      const type = this._getValueType(message.value);
+      this._instance.createEntry(name, type, message.value);
+    } else {
+      // Update the existing entry
+      const result = this._instance.setValue(name, message.value);
+      debug('Instance update result:', result);
+    }
 
     // Broadcast the entry update to all other clients
+    debug('Broadcasting entry update to all other clients');
     this._broadcastEntryUpdate(name, message.value, this._instance.getFlags(name) || NTEntryFlags.None, clientId);
   }
 
@@ -726,6 +780,37 @@ export class NTServer extends EventEmitter {
   }
 
   /**
+   * Get the type of a value
+   *
+   * @param value Value to get the type of
+   * @returns Value type
+   */
+  private _getValueType(value: NTValue): NTValueType {
+    if (typeof value === 'boolean') {
+      return NTValueType.Boolean;
+    } else if (typeof value === 'number') {
+      return NTValueType.Double;
+    } else if (typeof value === 'string') {
+      return NTValueType.String;
+    } else if (value instanceof Uint8Array || value instanceof Buffer) {
+      return NTValueType.Raw;
+    } else if (Array.isArray(value)) {
+      if (value.length === 0) {
+        return NTValueType.BooleanArray; // Default to boolean array for empty arrays
+      }
+      const firstItem = value[0];
+      if (typeof firstItem === 'boolean') {
+        return NTValueType.BooleanArray;
+      } else if (typeof firstItem === 'number') {
+        return NTValueType.DoubleArray;
+      } else if (typeof firstItem === 'string') {
+        return NTValueType.StringArray;
+      }
+    }
+    throw new Error('Unsupported value type');
+  }
+
+  /**
    * Start the keep-alive timer for a client
    *
    * @param clientId Client ID
@@ -757,6 +842,8 @@ export class NTServer extends EventEmitter {
    * @param excludeClientId Client ID to exclude (optional)
    */
   private _broadcastEntryUpdate(name: string, value: NTValue, flags: NTEntryFlags, excludeClientId?: string): void {
+    debug('Broadcasting entry update', name, value);
+
     this._clients.forEach((client, clientId) => {
       // Skip the excluded client
       if (excludeClientId && clientId === excludeClientId) {
@@ -921,5 +1008,31 @@ export class NTServer extends EventEmitter {
       client.reverseEntryIdMap.clear();
       client.sequenceNumbers.clear();
     });
+  }
+
+  /**
+   * Broadcast a value update to all connected clients
+   *
+   * @param name Entry name
+   * @param value Entry value
+   * @param type Entry type
+   * @param flags Entry flags
+   */
+  public broadcastValueUpdate(name: string, value: NTValue, type: NTValueType, flags: NTEntryFlags): void {
+    debug(`Broadcasting value update for ${name}: ${value}`);
+
+    // Update the instance value directly without triggering listeners
+    let entry = this._instance.getEntry(name);
+    if (!entry) {
+      // Create the entry with the appropriate type
+      debug('Entry does not exist, creating it');
+      this._instance.createEntry(name, type, value, NTEntryFlags.None, false); // Don't notify listeners
+    } else {
+      // Update the existing entry through the instance
+      this._instance.setValue(name, value, false); // Don't notify listeners
+    }
+
+    // Broadcast the update to all clients
+    this._broadcastEntryUpdate(name, value, flags);
   }
 }

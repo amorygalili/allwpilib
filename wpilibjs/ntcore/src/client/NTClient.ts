@@ -1,5 +1,12 @@
 import { EventEmitter } from 'events';
 import { Socket } from 'net';
+
+// Debug logging function
+function debug(...args: any[]) {
+  if (process.env.NT_DEBUG === 'true') {
+    console.log('[NTClient]', ...args);
+  }
+}
 import { NTInstance } from '../instance/NTInstance';
 import { NTConnectionStatus, NTEntryFlags, NTValue, NTValueType } from '../types/NTTypes';
 import { Timestamp } from '@wpilib/wpiutil/src/timestamp/Timestamp';
@@ -107,34 +114,50 @@ export class NTClient extends EventEmitter {
   /**
    * Connect to the server
    */
-  connect(): void {
-    // If already connected, do nothing
-    if (this._connected) {
-      return;
-    }
+  connect(): Promise<void> {
+    debug('Connecting to server', this._options.host, this._options.port);
+    return new Promise((resolve, reject) => {
+      // If already connected, resolve immediately
+      if (this._connected) {
+        debug('Already connected');
+        resolve();
+        return;
+      }
 
-    // If reconnect timer is active, clear it
-    if (this._reconnectTimer) {
-      clearTimeout(this._reconnectTimer);
-      this._reconnectTimer = null;
-    }
+      // If reconnect timer is active, clear it
+      if (this._reconnectTimer) {
+        clearTimeout(this._reconnectTimer);
+        this._reconnectTimer = null;
+      }
 
-    // Create a new socket
-    this._socket = new Socket();
-    this._socket.setTimeout(this._options.timeout!);
+      // Create a new socket
+      this._socket = new Socket();
+      this._socket.setTimeout(this._options.timeout!);
 
-    // Set up event handlers
-    this._socket.on('connect', this._handleConnect.bind(this));
-    this._socket.on('data', this._handleData.bind(this));
-    this._socket.on('close', this._handleClose.bind(this));
-    this._socket.on('error', this._handleError.bind(this));
-    this._socket.on('timeout', this._handleTimeout.bind(this));
+      // Set up event handlers
+      this._socket.on('connect', () => {
+        this._handleConnect();
+        resolve();
+      });
+      this._socket.on('data', this._handleData.bind(this));
+      this._socket.on('close', this._handleClose.bind(this));
+      this._socket.on('error', (err) => {
+        debug('Connection error', err.message);
+        this._handleError(err);
+        reject(err);
+      });
+      this._socket.on('timeout', () => {
+        debug('Connection timeout');
+        this._handleTimeout();
+        reject(new Error('Connection timeout'));
+      });
 
-    // Update the connection status
-    this._instance.setConnectionStatus(NTConnectionStatus.Connecting);
+      // Update the connection status
+      this._instance.setConnectionStatus(NTConnectionStatus.Connecting);
 
-    // Connect to the server
-    this._socket.connect(this._options.port, this._options.host);
+      // Connect to the server
+      this._socket.connect(this._options.port, this._options.host);
+    });
   }
 
   /**
@@ -176,6 +199,8 @@ export class NTClient extends EventEmitter {
    * Handle socket connect event
    */
   private _handleConnect(): void {
+    debug('Connected to server');
+
     // Update the connection status
     this._connected = true;
     this._reconnectAttempts = 0;
@@ -265,6 +290,7 @@ export class NTClient extends EventEmitter {
    * Send the client hello message
    */
   private _sendClientHello(): void {
+    debug('Sending client hello message');
     if (this._socket) {
       // Create the client hello message
       const message: NTClientHelloMessage = {
@@ -324,6 +350,8 @@ export class NTClient extends EventEmitter {
    * @param message Message to process
    */
   private _processMessage(message: any): void {
+    debug('Processing message', message.type);
+
     switch (message.type) {
       case NTMessageType.KeepAlive:
         // Nothing to do for keep-alive messages
@@ -344,6 +372,7 @@ export class NTClient extends EventEmitter {
 
       case NTMessageType.ServerHelloComplete:
         // Server hello complete message
+        debug('Received server hello complete, handshake complete');
         this._handshakeComplete = true;
         this.emit('ready');
         break;
@@ -385,6 +414,8 @@ export class NTClient extends EventEmitter {
    * @param message Entry assignment message
    */
   private _handleEntryAssignment(message: NTEntryAssignmentMessage): void {
+    debug('Handling entry assignment', message.name, message.value);
+
     // Map the entry ID to the name
     this._entryIdMap.set(message.name, message.entryId);
     this._reverseEntryIdMap.set(message.entryId, message.name);
@@ -402,6 +433,8 @@ export class NTClient extends EventEmitter {
    * @param message Entry update message
    */
   private _handleEntryUpdate(message: NTEntryUpdateMessage): void {
+    debug('Handling entry update', message.entryId, message.value);
+
     // Get the entry name
     const name = this._reverseEntryIdMap.get(message.entryId);
     if (!name) {
@@ -547,7 +580,19 @@ export class NTClient extends EventEmitter {
    * @param flags Entry flags
    */
   sendValueUpdate(name: string, value: NTValue, type: NTValueType, flags: NTEntryFlags = NTEntryFlags.None): void {
-    if (!this._socket || !this._connected || !this._handshakeComplete) {
+    debug('Sending value update', name, value);
+
+    // Check if we can send the update
+    if (!this._socket) {
+      debug('Cannot send update: no socket');
+      return;
+    }
+    if (!this._connected) {
+      debug('Cannot send update: not connected');
+      return;
+    }
+    if (!this._handshakeComplete) {
+      debug('Cannot send update: handshake not complete');
       return;
     }
 

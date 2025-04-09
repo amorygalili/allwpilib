@@ -16,13 +16,14 @@ export enum NTValueType {
 /**
  * NetworkTables value
  */
-export type NTValue = 
-  | boolean 
-  | number 
-  | string 
-  | Buffer 
-  | boolean[] 
-  | number[] 
+export type NTValue =
+  | boolean
+  | number
+  | string
+  | Buffer
+  | Uint8Array
+  | boolean[]
+  | number[]
   | string[];
 
 /**
@@ -78,6 +79,10 @@ export interface NTEntryNotification {
   flags: NTEntryFlags;
   /** Timestamp (in microseconds since NT epoch) */
   timestamp: bigint;
+  /** Whether this is a new entry */
+  isNew?: boolean;
+  /** Whether this entry is being deleted */
+  isDelete?: boolean;
 }
 
 /**
