@@ -7,6 +7,8 @@ export { Watchdog } from './Watchdog';
 // Export driver station classes
 export { DriverStation, Alliance, Location, MatchType, JoystickAxisType, JoystickButtonType, JoystickPOVDirection } from './DriverStation';
 export { DSControlWord } from './DSControlWord';
+export { DriverStationThread } from './DriverStationThread';
+export { DSWebSocketServer, DSMessageType, DSMessage } from './network/DSWebSocketServer';
 
 // Export command-based framework
 export * from './commands';

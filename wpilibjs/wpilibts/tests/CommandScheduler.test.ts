@@ -15,15 +15,18 @@ jest.mock('../src/DriverStation', () => {
 });
 
 class TestCommand extends Command {
-  // Use the protected m_requirements from the parent class
   public initializeCount = 0;
   public executeCount = 0;
   public endCount = 0;
   public endInterruptedLast = false;
   private m_finished = false;
 
-  constructor(private m_requirements: Set<Subsystem> = new Set()) {
+  constructor(requirements: Set<Subsystem> = new Set()) {
     super();
+    // Add the requirements to the command
+    for (const requirement of requirements) {
+      this.addRequirements(requirement);
+    }
   }
 
   public override initialize(): void {
@@ -47,9 +50,7 @@ class TestCommand extends Command {
     this.m_finished = finished;
   }
 
-  public override getRequirements(): Set<Subsystem> {
-    return this.m_requirements;
-  }
+  // We don't need to override getRequirements since we're using the parent class implementation
 }
 
 class TestSubsystem extends Subsystem {
@@ -243,10 +244,16 @@ describe('CommandScheduler', () => {
 
     subsystem.setDefaultCommand(defaultCommand);
 
+    // First run schedules the default command
     scheduler.run();
 
     expect(scheduler.isScheduled(defaultCommand)).toBe(true);
     expect(defaultCommand.initializeCount).toBe(1);
+    expect(defaultCommand.executeCount).toBe(0);
+
+    // Second run executes the command
+    scheduler.run();
+
     expect(defaultCommand.executeCount).toBe(1);
   });
 

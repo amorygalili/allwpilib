@@ -1,6 +1,6 @@
 /**
  * Control word for the DS to control the robot state.
- * 
+ *
  * This class is used to determine the state of the robot, including
  * whether it is enabled, autonomous, test, emergency stopped, etc.
  */
@@ -14,7 +14,7 @@ export class DSControlWord {
 
   /**
    * Constructor for DSControlWord.
-   * 
+   *
    * @param enabled Whether the robot is enabled
    * @param autonomous Whether the robot is in autonomous mode
    * @param test Whether the robot is in test mode
@@ -40,18 +40,47 @@ export class DSControlWord {
 
   /**
    * Refresh the control word data.
-   * 
+   *
+   * This method updates the control word with the latest data.
    * In a real implementation, this would fetch data from the HAL.
-   * For now, we'll keep the current state.
+   * For our implementation, this is called by the DriverStation class
+   * when new data is received from the WebSocket server.
    */
   public refresh(): void {
-    // In a real implementation, this would fetch data from the HAL
-    // For now, we'll keep the current state
+    // This method is now a no-op as the values are set directly
+    // by the DriverStation class when it receives updates from
+    // the WebSocket server or simulation controls.
+  }
+
+  /**
+   * Update the control word with new values.
+   *
+   * @param enabled Whether the robot is enabled
+   * @param autonomous Whether the robot is in autonomous mode
+   * @param test Whether the robot is in test mode
+   * @param emergencyStop Whether the robot is emergency stopped
+   * @param fmsAttached Whether the robot is connected to the FMS
+   * @param dsAttached Whether the robot is connected to the DS
+   */
+  public update(
+    enabled: boolean,
+    autonomous: boolean,
+    test: boolean,
+    emergencyStop: boolean,
+    fmsAttached: boolean,
+    dsAttached: boolean
+  ): void {
+    this.m_enabled = enabled;
+    this.m_autonomous = autonomous;
+    this.m_test = test;
+    this.m_emergencyStop = emergencyStop;
+    this.m_fmsAttached = fmsAttached;
+    this.m_dsAttached = dsAttached;
   }
 
   /**
    * Get if the robot is enabled.
-   * 
+   *
    * @return True if the robot is enabled
    */
   public isEnabled(): boolean {
@@ -60,7 +89,7 @@ export class DSControlWord {
 
   /**
    * Get if the robot is disabled.
-   * 
+   *
    * @return True if the robot is disabled
    */
   public isDisabled(): boolean {
@@ -69,7 +98,7 @@ export class DSControlWord {
 
   /**
    * Get if the robot is in autonomous mode.
-   * 
+   *
    * @return True if the robot is in autonomous mode
    */
   public isAutonomous(): boolean {
@@ -78,7 +107,7 @@ export class DSControlWord {
 
   /**
    * Get if the robot is in teleop mode.
-   * 
+   *
    * @return True if the robot is in teleop mode
    */
   public isTeleop(): boolean {
@@ -87,7 +116,7 @@ export class DSControlWord {
 
   /**
    * Get if the robot is in test mode.
-   * 
+   *
    * @return True if the robot is in test mode
    */
   public isTest(): boolean {
@@ -96,7 +125,7 @@ export class DSControlWord {
 
   /**
    * Get if the robot is emergency stopped.
-   * 
+   *
    * @return True if the robot is emergency stopped
    */
   public isEStopped(): boolean {
@@ -105,7 +134,7 @@ export class DSControlWord {
 
   /**
    * Get if the robot is connected to the FMS.
-   * 
+   *
    * @return True if the robot is connected to the FMS
    */
   public isFMSAttached(): boolean {
@@ -114,7 +143,7 @@ export class DSControlWord {
 
   /**
    * Get if the robot is connected to the DS.
-   * 
+   *
    * @return True if the robot is connected to the DS
    */
   public isDSAttached(): boolean {
@@ -123,7 +152,7 @@ export class DSControlWord {
 
   /**
    * Set the enabled state of the robot.
-   * 
+   *
    * @param enabled Whether the robot is enabled
    */
   public setEnabled(enabled: boolean): void {
@@ -132,7 +161,7 @@ export class DSControlWord {
 
   /**
    * Set the autonomous mode of the robot.
-   * 
+   *
    * @param autonomous Whether the robot is in autonomous mode
    */
   public setAutonomous(autonomous: boolean): void {
@@ -144,7 +173,7 @@ export class DSControlWord {
 
   /**
    * Set the test mode of the robot.
-   * 
+   *
    * @param test Whether the robot is in test mode
    */
   public setTest(test: boolean): void {
@@ -156,7 +185,7 @@ export class DSControlWord {
 
   /**
    * Set the emergency stop state of the robot.
-   * 
+   *
    * @param emergencyStop Whether the robot is emergency stopped
    */
   public setEStopped(emergencyStop: boolean): void {
@@ -165,7 +194,7 @@ export class DSControlWord {
 
   /**
    * Set the FMS attached state of the robot.
-   * 
+   *
    * @param fmsAttached Whether the robot is connected to the FMS
    */
   public setFMSAttached(fmsAttached: boolean): void {
@@ -174,7 +203,7 @@ export class DSControlWord {
 
   /**
    * Set the DS attached state of the robot.
-   * 
+   *
    * @param dsAttached Whether the robot is connected to the DS
    */
   public setDSAttached(dsAttached: boolean): void {

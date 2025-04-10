@@ -5,7 +5,7 @@ import { DriverStation } from './DriverStation';
 /**
  * Robot mode enumeration.
  */
-enum Mode {
+export enum Mode {
   kNone,
   kDisabled,
   kAutonomous,
@@ -50,8 +50,8 @@ enum Mode {
  */
 export abstract class IterativeRobotBase extends RobotBase {
 
-  private m_lastMode: Mode = Mode.kNone;
-  private m_period: number;
+  protected m_lastMode: Mode = Mode.kNone;
+  protected m_period: number;
   private m_watchdog: Watchdog;
   private m_ntFlushEnabled: boolean = true;
   private m_lwEnabledInTest: boolean = false;
@@ -293,6 +293,14 @@ export abstract class IterativeRobotBase extends RobotBase {
     const isTeleop = ds.isTeleop();
     const isTest = ds.isTest();
     const isDSAttached = ds.isDSAttached();
+    const isEStopped = ds.isEStopped();
+
+    // If the robot is e-stopped, force it to be disabled
+    if (isEStopped && !isDisabled) {
+      console.log("Robot is e-stopped! Forcing disabled mode.");
+      // Force disabled mode
+      ds.setEnabled(false);
+    }
 
     // Get current mode
     let mode = Mode.kNone;

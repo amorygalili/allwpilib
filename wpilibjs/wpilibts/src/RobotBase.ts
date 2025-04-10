@@ -110,6 +110,37 @@ export abstract class RobotBase {
   public close(): void {}
 
   /**
+   * Start the robot's main loop.
+   * This method is called once when the robot is started.
+   */
+  public start(): void {
+    try {
+      this.startCompetition();
+    } catch (error) {
+      console.error('Unhandled exception', error);
+      process.exit(-1);
+    }
+  }
+
+  /**
+   * Determine if the robot is running in simulation.
+   *
+   * @return True if the robot is running in simulation.
+   */
+  public static isSimulation(): boolean {
+    return true; // Always true in TypeScript implementation
+  }
+
+  /**
+   * Determine if the robot is running in the real world.
+   *
+   * @return True if the robot is running in the real world.
+   */
+  public static isReal(): boolean {
+    return false; // Always false in TypeScript implementation
+  }
+
+  /**
    * Starting point for the robot applications.
    */
   public static main(robotClass: new () => RobotBase): void {
@@ -126,6 +157,7 @@ export abstract class RobotBase {
 
       try {
         robot.startCompetition();
+        console.log('********** Robot program startup complete **********');
       } catch (error) {
         console.error("startCompetition() failed", error);
         throw error;

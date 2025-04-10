@@ -1,5 +1,7 @@
 import { DSControlWord } from './DSControlWord';
 import { EventEmitter } from 'events';
+import { DSWebSocketServer } from './network/DSWebSocketServer';
+import { DriverStationThread } from './DriverStationThread';
 
 /**
  * Joystick axis types.
@@ -104,7 +106,7 @@ export class DriverStation extends EventEmitter {
   private constructor() {
     super();
     this.m_controlWord = new DSControlWord();
-    
+
     // Initialize joystick data
     for (let i = 0; i < 6; i++) {
       this.m_joystickAxes.set(i, new Map());
@@ -114,8 +116,24 @@ export class DriverStation extends EventEmitter {
   }
 
   /**
+   * Initialize the driver station communication.
+   *
+   * This method starts the WebSocket server and the driver station thread.
+   * It should be called once when the robot program starts.
+   *
+   * @return True if initialization was successful
+   */
+  public static initialize(): boolean {
+    const ds = DriverStation.getInstance();
+    const thread = DriverStationThread.getInstance();
+
+    // Start the driver station thread
+    return thread.start();
+  }
+
+  /**
    * Get an instance of the DriverStation.
-   * 
+   *
    * @return The DriverStation instance
    */
   public static getInstance(): DriverStation {
@@ -127,18 +145,50 @@ export class DriverStation extends EventEmitter {
 
   /**
    * Read new data from the driver station.
-   * 
-   * In a real implementation, this would read data from the network.
-   * For simulation, we'll just update the control word.
+   *
+   * This method is called periodically by the DriverStationThread to update
+   * the robot state based on data received from the driver station.
+   * It refreshes the control word and emits events for state changes.
    */
   public refreshData(): void {
+    const wasEnabled = this.isEnabled();
+    const wasAutonomous = this.isAutonomous();
+    const wasTest = this.isTest();
+
+    // Refresh the control word
     this.m_controlWord.refresh();
     this.m_newControlData = true;
+
+    // Emit events for state changes
+    if (this.isEnabled() !== wasEnabled) {
+      this.emit(this.isEnabled() ? 'enabled' : 'disabled');
+    }
+
+    if (this.isAutonomous() !== wasAutonomous) {
+      if (this.isAutonomous()) {
+        this.emit('autonomous');
+      }
+    }
+
+    if (this.isTest() !== wasTest) {
+      if (this.isTest()) {
+        this.emit('test');
+      }
+    }
+
+    // If not in autonomous or test, we're in teleop
+    if (!this.isAutonomous() && !this.isTest() &&
+        (wasAutonomous || wasTest)) {
+      this.emit('teleop');
+    }
+
+    // Emit a general update event
+    this.emit('update');
   }
 
   /**
    * Is the driver station attached to the robot?
-   * 
+   *
    * @return True if the driver station is attached
    */
   public isDSAttached(): boolean {
@@ -147,7 +197,7 @@ export class DriverStation extends EventEmitter {
 
   /**
    * Is the driver station attached to a Field Management System?
-   * 
+   *
    * @return True if the driver station is attached to an FMS
    */
   public isFMSAttached(): boolean {
@@ -156,7 +206,7 @@ export class DriverStation extends EventEmitter {
 
   /**
    * Is the robot enabled?
-   * 
+   *
    * @return True if the robot is enabled
    */
   public isEnabled(): boolean {
@@ -165,7 +215,7 @@ export class DriverStation extends EventEmitter {
 
   /**
    * Is the robot disabled?
-   * 
+   *
    * @return True if the robot is disabled
    */
   public isDisabled(): boolean {
@@ -174,7 +224,7 @@ export class DriverStation extends EventEmitter {
 
   /**
    * Is the robot in autonomous mode?
-   * 
+   *
    * @return True if the robot is in autonomous mode
    */
   public isAutonomous(): boolean {
@@ -183,7 +233,7 @@ export class DriverStation extends EventEmitter {
 
   /**
    * Is the robot in teleop mode?
-   * 
+   *
    * @return True if the robot is in teleop mode
    */
   public isTeleop(): boolean {
@@ -192,7 +242,7 @@ export class DriverStation extends EventEmitter {
 
   /**
    * Is the robot in test mode?
-   * 
+   *
    * @return True if the robot is in test mode
    */
   public isTest(): boolean {
@@ -201,7 +251,7 @@ export class DriverStation extends EventEmitter {
 
   /**
    * Is the robot emergency stopped?
-   * 
+   *
    * @return True if the robot is emergency stopped
    */
   public isEStopped(): boolean {
@@ -210,7 +260,7 @@ export class DriverStation extends EventEmitter {
 
   /**
    * Get the alliance the robot is on.
-   * 
+   *
    * @return The alliance the robot is on
    */
   public getAlliance(): Alliance {
@@ -219,7 +269,7 @@ export class DriverStation extends EventEmitter {
 
   /**
    * Get the location of the team's driver station controls.
-   * 
+   *
    * @return The location of the team's driver station controls
    */
   public getLocation(): Location {
@@ -228,7 +278,7 @@ export class DriverStation extends EventEmitter {
 
   /**
    * Get the match information.
-   * 
+   *
    * @return The match information
    */
   public getMatchInfo(): MatchInfo {
@@ -237,7 +287,7 @@ export class DriverStation extends EventEmitter {
 
   /**
    * Get the game specific message.
-   * 
+   *
    * @return The game specific message
    */
   public getGameSpecificMessage(): string {
@@ -246,7 +296,7 @@ export class DriverStation extends EventEmitter {
 
   /**
    * Get the value of a joystick axis.
-   * 
+   *
    * @param stick The joystick port number
    * @param axis The axis to get the value of
    * @return The value of the axis (-1 to 1)
@@ -266,7 +316,7 @@ export class DriverStation extends EventEmitter {
 
   /**
    * Get the button value of a joystick.
-   * 
+   *
    * @param stick The joystick port number
    * @param button The button number to get the value of (starting at 1)
    * @return The state of the button
@@ -290,7 +340,7 @@ export class DriverStation extends EventEmitter {
 
   /**
    * Get the POV value of a joystick.
-   * 
+   *
    * @param stick The joystick port number
    * @param pov The POV number (usually 0)
    * @return The value of the POV
@@ -314,9 +364,9 @@ export class DriverStation extends EventEmitter {
 
   /**
    * Set the value of a joystick axis.
-   * 
+   *
    * This is used for simulation.
-   * 
+   *
    * @param stick The joystick port number
    * @param axis The axis to set the value of
    * @param value The value to set the axis to (-1 to 1)
@@ -338,9 +388,9 @@ export class DriverStation extends EventEmitter {
 
   /**
    * Set the value of a joystick button.
-   * 
+   *
    * This is used for simulation.
-   * 
+   *
    * @param stick The joystick port number
    * @param button The button number to set the value of (starting at 1)
    * @param value The state of the button
@@ -365,15 +415,15 @@ export class DriverStation extends EventEmitter {
     } else {
       buttons.delete(button);
     }
-    
+
     this.m_newControlData = true;
   }
 
   /**
    * Set the value of a joystick POV.
-   * 
+   *
    * This is used for simulation.
-   * 
+   *
    * @param stick The joystick port number
    * @param pov The POV number (usually 0)
    * @param value The value of the POV
@@ -398,9 +448,9 @@ export class DriverStation extends EventEmitter {
 
   /**
    * Set the enabled state of the robot.
-   * 
+   *
    * This is used for simulation.
-   * 
+   *
    * @param enabled Whether the robot is enabled
    */
   public setEnabled(enabled: boolean): void {
@@ -411,9 +461,9 @@ export class DriverStation extends EventEmitter {
 
   /**
    * Set the autonomous mode of the robot.
-   * 
+   *
    * This is used for simulation.
-   * 
+   *
    * @param autonomous Whether the robot is in autonomous mode
    */
   public setAutonomous(autonomous: boolean): void {
@@ -424,9 +474,9 @@ export class DriverStation extends EventEmitter {
 
   /**
    * Set the test mode of the robot.
-   * 
+   *
    * This is used for simulation.
-   * 
+   *
    * @param test Whether the robot is in test mode
    */
   public setTest(test: boolean): void {
@@ -437,9 +487,9 @@ export class DriverStation extends EventEmitter {
 
   /**
    * Set the emergency stop state of the robot.
-   * 
+   *
    * This is used for simulation.
-   * 
+   *
    * @param estopped Whether the robot is emergency stopped
    */
   public setEStopped(estopped: boolean): void {
@@ -450,9 +500,9 @@ export class DriverStation extends EventEmitter {
 
   /**
    * Set the FMS attached state of the robot.
-   * 
+   *
    * This is used for simulation.
-   * 
+   *
    * @param attached Whether the robot is connected to the FMS
    */
   public setFMSAttached(attached: boolean): void {
@@ -463,9 +513,9 @@ export class DriverStation extends EventEmitter {
 
   /**
    * Set the DS attached state of the robot.
-   * 
+   *
    * This is used for simulation.
-   * 
+   *
    * @param attached Whether the robot is connected to the DS
    */
   public setDSAttached(attached: boolean): void {
@@ -476,9 +526,9 @@ export class DriverStation extends EventEmitter {
 
   /**
    * Set the alliance of the robot.
-   * 
+   *
    * This is used for simulation.
-   * 
+   *
    * @param alliance The alliance of the robot
    */
   public setAlliance(alliance: Alliance): void {
@@ -489,9 +539,9 @@ export class DriverStation extends EventEmitter {
 
   /**
    * Set the location of the team's driver station controls.
-   * 
+   *
    * This is used for simulation.
-   * 
+   *
    * @param location The location of the team's driver station controls
    */
   public setLocation(location: Location): void {
@@ -502,9 +552,9 @@ export class DriverStation extends EventEmitter {
 
   /**
    * Set the match information.
-   * 
+   *
    * This is used for simulation.
-   * 
+   *
    * @param matchInfo The match information
    */
   public setMatchInfo(matchInfo: MatchInfo): void {
@@ -515,9 +565,9 @@ export class DriverStation extends EventEmitter {
 
   /**
    * Set the game specific message.
-   * 
+   *
    * This is used for simulation.
-   * 
+   *
    * @param message The game specific message
    */
   public setGameSpecificMessage(message: string): void {

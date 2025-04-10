@@ -111,6 +111,41 @@ npm run example BasicRobot
 
 Replace `BasicRobot` with the name of the example you want to run.
 
+### Driver Station Example
+
+The Driver Station example demonstrates how to use the DriverStation class with WebSocket integration. It includes a web-based Driver Station client that allows you to control the robot.
+
+To run the Driver Station example with a single command:
+
+```bash
+npm run driverstation
+```
+
+This will:
+1. Build the project if needed
+2. Start the robot program
+3. Open the Driver Station client in your default web browser
+
+Alternatively, you can run the example manually:
+
+1. Start the robot program:
+   ```bash
+   npm run example DriverStationExample
+   ```
+
+2. Open the Driver Station client in your web browser:
+   ```
+   examples/DriverStationClient.html
+   ```
+
+3. Use the client interface to control the robot:
+   - Enable/Disable the robot
+   - Switch between Teleop, Autonomous, and Test modes
+   - Use the virtual joystick
+   - Activate and reset the E-Stop
+
+For detailed instructions, see [DriverStationExample.md](./examples/DriverStationExample.md) or the quick start guide [DRIVER_STATION_QUICKSTART.md](./DRIVER_STATION_QUICKSTART.md)
+
 ## Testing
 
 The wpilibts package includes a comprehensive test suite. You can run the tests using:

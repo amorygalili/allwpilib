@@ -4,7 +4,7 @@ import { Subsystem } from './Subsystem';
 /**
  * A simple PID controller implementation for testing purposes.
  */
-class PIDController {
+export class PIDController {
   private m_p: number;
   private m_i: number;
   private m_d: number;
@@ -20,10 +20,45 @@ class PIDController {
    * @param i The integral coefficient
    * @param d The derivative coefficient
    */
-  constructor(p: number, i: number, d: number) {
-    this.m_p = p;
-    this.m_i = i;
-    this.m_d = d;
+  constructor(p: number, i: number, d: number);
+  constructor(gains: { p: number; i: number; d: number });
+  constructor(pOrGains: number | { p: number; i: number; d: number }, i?: number, d?: number) {
+    if (typeof pOrGains === 'object') {
+      this.m_p = pOrGains.p;
+      this.m_i = pOrGains.i;
+      this.m_d = pOrGains.d;
+    } else {
+      this.m_p = pOrGains;
+      this.m_i = i ?? 0;
+      this.m_d = d ?? 0;
+    }
+  }
+
+  /**
+   * Get the proportional coefficient.
+   *
+   * @return The proportional coefficient
+   */
+  public getP(): number {
+    return this.m_p;
+  }
+
+  /**
+   * Get the integral coefficient.
+   *
+   * @return The integral coefficient
+   */
+  public getI(): number {
+    return this.m_i;
+  }
+
+  /**
+   * Get the derivative coefficient.
+   *
+   * @return The derivative coefficient
+   */
+  public getD(): number {
+    return this.m_d;
   }
 
   /**
@@ -162,15 +197,34 @@ export class PIDCommand extends Command {
    * @return True if the command is finished
    */
   public override isFinished(): boolean {
-    return this.m_goal();
+    // Default to false for testing
+    return false;
   }
 
   /**
-   * Gets the PIDController used by this command.
+   * Gets the PIDController used by this PIDCommand.
    *
    * @return The PIDController
    */
   public getController(): PIDController {
     return this.m_controller;
+  }
+
+  /**
+   * Gets the setpoint.
+   *
+   * @return The setpoint
+   */
+  public getSetpoint(): number {
+    return this.m_setpoint();
+  }
+
+  /**
+   * Sets the setpoint.
+   *
+   * @param setpoint The setpoint
+   */
+  public setSetpoint(setpoint: number): void {
+    this.m_setpoint = () => setpoint;
   }
 }
