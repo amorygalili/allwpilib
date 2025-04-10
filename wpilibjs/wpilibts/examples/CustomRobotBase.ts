@@ -1,14 +1,17 @@
-import { DriverStation } from './DriverStation';
-import { networkTables } from './network/NetworkTablesInterface';
-import { simHooks } from './simulation/SimHooks';
+/**
+ * Custom RobotBase implementation that allows disabling the NetworkTables server.
+ * 
+ * This is a modified version of the RobotBase class that allows disabling the
+ * NetworkTables server to avoid port conflicts.
+ */
+import { DriverStation } from '../src/DriverStation';
+import { networkTables } from '../src/network/NetworkTablesInterface';
+import { simHooks } from '../src/simulation/SimHooks';
 
 /**
- * RobotBase is the base class for all robot programs in TypeScript.
- *
- * This class provides the basic structure for robot programs, including
- * the main entry point and lifecycle methods.
+ * CustomRobotBase is a modified version of RobotBase that allows disabling the NetworkTables server.
  */
-export abstract class RobotBase {
+export abstract class CustomRobotBase {
   private static m_robotInitialized = false;
   private static m_robotRunning = false;
 
@@ -51,7 +54,7 @@ export abstract class RobotBase {
   /**
    * Determine if the robot is currently in Teleop mode.
    *
-   * @return True if the robot is currently operating Teleoperatedly.
+   * @return True if the robot is currently operating Teleoperatively.
    */
   public isTeleop(): boolean {
     return DriverStation.getInstance().isTeleop();
@@ -67,36 +70,29 @@ export abstract class RobotBase {
   }
 
   /**
-   * Determine if the robot is currently in Simulation.
+   * Determine if the robot is currently in Simulation mode.
    *
    * @return True if the robot is currently running in simulation.
    */
-  public isSimulation(): boolean {
-    return true; // For now, always return true since we're in TypeScript
+  public static isSimulation(): boolean {
+    return process.env.WPILIB_SIMULATION === 'true';
   }
 
   /**
-   * Determine if the robot is currently in Real.
+   * Determine if the robot is currently in Real mode.
    *
    * @return True if the robot is currently running in the real world.
    */
-  public isReal(): boolean {
-    return false; // For now, always return false since we're in TypeScript
+  public static isReal(): boolean {
+    return !CustomRobotBase.isSimulation();
   }
 
   /**
-   * Robot-wide initialization code should go here.
+   * Get the current robot name.
    *
-   * This method is called once when the robot is first started up.
+   * @return The current robot name.
    */
-  public robotInit(): void {}
-
-  /**
-   * Ends the main robot program.
-   */
-  public endCompetition(): void {
-    RobotBase.m_robotRunning = false;
-  }
+  public abstract getRobotName(): string;
 
   /**
    * Provide an alternate "main loop" via startCompetition().
@@ -104,49 +100,82 @@ export abstract class RobotBase {
   public abstract startCompetition(): void;
 
   /**
-   * Clean up resources used by the robot.
-   *
-   * This method should be overridden by subclasses to clean up any resources
-   * they have allocated.
+   * This hook is called right before startCompetition() is called.
+   * By default, it does nothing.
    */
-  public close(): void {}
+  public robotInit(): void {}
 
   /**
-   * Start the robot's main loop.
-   * This method is called once when the robot is started.
+   * This hook is called right after startCompetition() is called.
+   * By default, it does nothing.
    */
-  public start(): void {
-    try {
-      this.startCompetition();
-    } catch (error) {
-      console.error('Unhandled exception', error);
-      process.exit(-1);
-    }
-  }
+  public robotStarted(): void {}
 
   /**
-   * Determine if the robot is running in simulation.
-   *
-   * @return True if the robot is running in simulation.
+   * This hook is called right before the robot is disabled.
+   * By default, it does nothing.
    */
-  public static isSimulation(): boolean {
-    return true; // Always true in TypeScript implementation
-  }
+  public disabledInit(): void {}
 
   /**
-   * Determine if the robot is running in the real world.
-   *
-   * @return True if the robot is running in the real world.
+   * This hook is called right before the robot enters autonomous mode.
+   * By default, it does nothing.
    */
-  public static isReal(): boolean {
-    return false; // Always false in TypeScript implementation
-  }
+  public autonomousInit(): void {}
+
+  /**
+   * This hook is called right before the robot enters teleop mode.
+   * By default, it does nothing.
+   */
+  public teleopInit(): void {}
+
+  /**
+   * This hook is called right before the robot enters test mode.
+   * By default, it does nothing.
+   */
+  public testInit(): void {}
+
+  /**
+   * This hook is called periodically while the robot is disabled.
+   * By default, it does nothing.
+   */
+  public disabledPeriodic(): void {}
+
+  /**
+   * This hook is called periodically while the robot is in autonomous mode.
+   * By default, it does nothing.
+   */
+  public autonomousPeriodic(): void {}
+
+  /**
+   * This hook is called periodically while the robot is in teleop mode.
+   * By default, it does nothing.
+   */
+  public teleopPeriodic(): void {}
+
+  /**
+   * This hook is called periodically while the robot is in test mode.
+   * By default, it does nothing.
+   */
+  public testPeriodic(): void {}
+
+  /**
+   * This hook is called periodically regardless of mode.
+   * By default, it does nothing.
+   */
+  public robotPeriodic(): void {}
+
+  /**
+   * This hook is called right before the robot is shut down.
+   * By default, it does nothing.
+   */
+  public endCompetition(): void {}
 
   /**
    * Starting point for the robot applications.
    */
-  public static main(robotClass: new () => RobotBase): void {
-    if (RobotBase.m_robotInitialized) {
+  public static main(robotClass: new () => CustomRobotBase, disableNTServer: boolean = false): void {
+    if (CustomRobotBase.m_robotInitialized) {
       throw new Error("The robot has already been initialized!");
     }
 
@@ -166,8 +195,8 @@ export abstract class RobotBase {
     );
     const port = isSimulationExample ? 1739 : 1735;
 
-    if (!isNetworkTablesTest) {
-      if (RobotBase.isSimulation()) {
+    if (!isNetworkTablesTest && !disableNTServer) {
+      if (CustomRobotBase.isSimulation()) {
         // Start NetworkTables server in simulation mode
         networkTables.startServer(port).catch(error => {
           console.error("Failed to start NetworkTables server:", error);
@@ -180,10 +209,10 @@ export abstract class RobotBase {
       }
     }
 
-    RobotBase.m_robotInitialized = true;
-    RobotBase.m_robotRunning = true;
+    CustomRobotBase.m_robotInitialized = true;
+    CustomRobotBase.m_robotRunning = true;
 
-    let robot: RobotBase | undefined;
+    let robot: CustomRobotBase | undefined;
     try {
       robot = new robotClass();
 
@@ -200,15 +229,12 @@ export abstract class RobotBase {
     } finally {
       if (robot) {
         try {
-          robot.close();
-          // Disconnect from NetworkTables
-          networkTables.disconnect().catch(error => {
-            console.error("Failed to disconnect from NetworkTables:", error);
-          });
+          robot.endCompetition();
         } catch (error) {
-          console.error("Exception during close()", error);
+          console.error("endCompetition() failed", error);
         }
       }
+      CustomRobotBase.m_robotRunning = false;
     }
   }
 }

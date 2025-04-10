@@ -146,6 +146,41 @@ Alternatively, you can run the example manually:
 
 For detailed instructions, see [DriverStationExample.md](./examples/DriverStationExample.md) or the quick start guide [DRIVER_STATION_QUICKSTART.md](./DRIVER_STATION_QUICKSTART.md)
 
+### Simulation Example
+
+The Simulation example demonstrates how to use the simulation features of WPILib, including HALSim and NetworkTables. It simulates a simple robot with a drivetrain and sensors, and provides a web-based UI to control and monitor the robot.
+
+To run the Simulation example with a single command:
+
+```bash
+npm run simulation
+```
+
+This will:
+1. Build the project if needed
+2. Start the robot program
+3. Open the Simulation UI in your default web browser
+
+Alternatively, you can run the example manually:
+
+1. Start the robot program:
+   ```bash
+   npm run example SimulationExample
+   ```
+
+2. Open the Simulation UI in your web browser:
+   ```
+   examples/SimulationUI.html
+   ```
+
+3. Use the UI to control and monitor the robot:
+   - Enable/Disable the robot
+   - Switch between Teleop, Autonomous, and Test modes
+   - Control the robot using virtual joysticks or motor sliders
+   - Monitor sensor values and robot position
+
+For detailed instructions, see [SimulationExample.md](./examples/SimulationExample.md)
+
 ## Testing
 
 The wpilibts package includes a comprehensive test suite. You can run the tests using:

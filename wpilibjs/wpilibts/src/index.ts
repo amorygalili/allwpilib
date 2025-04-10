@@ -8,10 +8,15 @@ export { Watchdog } from './Watchdog';
 export { DriverStation, Alliance, Location, MatchType, JoystickAxisType, JoystickButtonType, JoystickPOVDirection } from './DriverStation';
 export { DSControlWord } from './DSControlWord';
 export { DriverStationThread } from './DriverStationThread';
-export { DSWebSocketServer, DSMessageType, DSMessage } from './network/DSWebSocketServer';
+
+// Export network classes
+export { DSWebSocketServer, DSMessageType, DSMessage, NetworkTablesInterface, networkTables, NetworkTablesWebSocketServer, ntWebSocketServer, NTMessageType } from './network';
 
 // Export command-based framework
 export * from './commands';
 
 // Export any utility classes
 // TODO: Add more classes as they are implemented
+
+// Export simulation classes
+export * from './simulation';
